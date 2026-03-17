@@ -1,0 +1,227 @@
+:root {
+  --bg: #f4efe7;
+  --surface: rgba(255, 250, 243, 0.82);
+  --surface-strong: #fff9f0;
+  --ink: #1f2521;
+  --muted: #5b645e;
+  --line: rgba(31, 37, 33, 0.12);
+  --accent: #d86d3f;
+  --accent-deep: #8a3a1f;
+  --success: #1d7a52;
+  --error: #a63232;
+  --shadow: 0 24px 80px rgba(97, 62, 38, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "DM Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(216, 109, 63, 0.22), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(57, 118, 90, 0.18), transparent 24%),
+    linear-gradient(135deg, #f8f2ea 0%, #efe4d5 48%, #e9dcc9 100%);
+}
+
+.page-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 48px 0 72px;
+}
+
+.hero {
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.info-label,
+.dropzone-kicker {
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+.hero h1 {
+  margin: 10px 0 16px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+}
+
+.hero-copy {
+  max-width: 640px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 20px;
+}
+
+.upload-card,
+.info-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.upload-card {
+  padding: 22px;
+  border-radius: 28px;
+}
+
+.upload-form {
+  display: grid;
+  gap: 18px;
+}
+
+.dropzone {
+  display: grid;
+  gap: 14px;
+  min-height: 360px;
+  padding: 28px;
+  border: 2px dashed rgba(138, 58, 31, 0.32);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 240, 0.95), rgba(253, 242, 229, 0.88)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(31, 37, 33, 0.04) 28px,
+      rgba(31, 37, 33, 0.04) 29px
+    );
+  align-content: center;
+  justify-items: start;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dropzone:hover,
+.dropzone[data-dragging="true"] {
+  transform: translateY(-2px);
+  border-color: rgba(216, 109, 63, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(216, 109, 63, 0.15);
+}
+
+.dropzone strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  letter-spacing: -0.04em;
+}
+
+.file-name {
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.submit-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, #cf8651 100%);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    box-shadow 160ms ease;
+  box-shadow: 0 16px 32px rgba(216, 109, 63, 0.28);
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.status {
+  min-height: 28px;
+  padding: 4px 4px 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.status[data-tone="success"] {
+  color: var(--success);
+}
+
+.status[data-tone="error"] {
+  color: var(--error);
+}
+
+.status[data-tone="loading"] {
+  color: var(--accent-deep);
+}
+
+.info-panel {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: 20px;
+  border-radius: 24px;
+}
+
+.info-block {
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--surface-strong);
+  border: 1px solid rgba(31, 37, 33, 0.08);
+}
+
+.info-block p {
+  margin: 10px 0 0;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dropzone {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    width: min(100% - 20px, 100%);
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+
+  .upload-card,
+  .info-panel {
+    border-radius: 22px;
+  }
+
+  .upload-card {
+    padding: 16px;
+  }
+
+  .dropzone {
+    padding: 22px;
+  }
+}

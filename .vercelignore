@@ -1,0 +1,6 @@
+input_pdf
+output_pdf
+__pycache__
+*.pyc
+안될시 이거 사용.py
+makepdf.py

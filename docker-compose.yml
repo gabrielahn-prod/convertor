@@ -1,0 +1,8 @@
+services:
+  pdf-converter:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_ENV: production
