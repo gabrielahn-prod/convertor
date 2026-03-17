@@ -19,6 +19,7 @@ vercel
 ```
 
 `public/` 폴더의 정적 파일과 `app.py` Flask 앱을 함께 배포합니다.
+Vercel 서버리스 함수 엔트리포인트는 `api/app.py` 입니다.
 
 ## API
 
