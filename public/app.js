@@ -119,37 +119,6 @@ form.addEventListener("submit", async (event) => {
   resetResultLink();
   setStatus("변환 중입니다. 파일 크기에 따라 몇 초 걸릴 수 있습니다.", "loading");
 
-  let mobilePreviewWindow = null;
-  if (isMobileBrowser) {
-    mobilePreviewWindow = window.open("", "_blank", "noopener");
-    if (mobilePreviewWindow) {
-      mobilePreviewWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="ko">
-          <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>PDF 준비 중</title>
-            <style>
-              body {
-                margin: 0;
-                min-height: 100vh;
-                display: grid;
-                place-items: center;
-                padding: 24px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                background: #f7f2ea;
-                color: #1f2521;
-              }
-            </style>
-          </head>
-          <body>변환이 끝나면 PDF를 엽니다...</body>
-        </html>
-      `);
-      mobilePreviewWindow.document.close();
-    }
-  }
-
   try {
     const response = await fetch("/api/convert", {
       method: "POST",
@@ -175,26 +144,12 @@ form.addEventListener("submit", async (event) => {
     showResultLink(objectUrl, downloadName);
 
     if (isMobileBrowser) {
-      if (mobilePreviewWindow) {
-        mobilePreviewWindow.location.replace(objectUrl);
-        setStatus(
-          "변환이 완료되었습니다. 새 탭에서 PDF를 열었습니다. 브라우저의 공유 또는 다운로드 메뉴로 저장해 주세요.",
-          "success",
-        );
-      } else {
-        setStatus(
-          "변환이 완료되었습니다. 아래 '변환된 PDF 열기'를 눌러 저장해 주세요.",
-          "success",
-        );
-      }
+      setStatus("변환이 완료되었습니다. 아래 버튼을 눌러 PDF를 다운로드해 주세요.", "success");
     } else {
       triggerDesktopDownload(objectUrl, downloadName);
-      setStatus("변환이 완료되었습니다. 다운로드를 시작합니다.", "success");
+      setStatus("변환이 완료되었습니다. 아래 버튼으로 다시 다운로드할 수 있습니다.", "success");
     }
   } catch (error) {
-    if (mobilePreviewWindow && !mobilePreviewWindow.closed) {
-      mobilePreviewWindow.close();
-    }
     setStatus(error.message, "error");
   } finally {
     submitButton.disabled = false;
