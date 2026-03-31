@@ -4,10 +4,53 @@ const fileInput = document.getElementById("file-input");
 const fileName = document.getElementById("file-name");
 const statusBox = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
+const resultActions = document.getElementById("result-actions");
+const openResultLink = document.getElementById("open-result-link");
+
+const userAgent = navigator.userAgent || navigator.vendor || "";
+const isIOS =
+  /iPad|iPhone|iPod/.test(userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(userAgent);
+const isMobileBrowser = isIOS || isAndroid;
+
+let activeObjectUrl = null;
 
 const setStatus = (message, tone = "idle") => {
   statusBox.textContent = message;
   statusBox.dataset.tone = tone;
+};
+
+const releaseActiveObjectUrl = () => {
+  if (!activeObjectUrl) {
+    return;
+  }
+
+  URL.revokeObjectURL(activeObjectUrl);
+  activeObjectUrl = null;
+};
+
+const resetResultLink = () => {
+  resultActions.hidden = true;
+  openResultLink.href = "#";
+  openResultLink.removeAttribute("download");
+  releaseActiveObjectUrl();
+};
+
+const showResultLink = (objectUrl, downloadName) => {
+  activeObjectUrl = objectUrl;
+  openResultLink.href = objectUrl;
+  openResultLink.download = downloadName;
+  resultActions.hidden = false;
+};
+
+const triggerDesktopDownload = (objectUrl, downloadName) => {
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = downloadName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 };
 
 const updateSelectedFile = (file) => {
@@ -25,6 +68,7 @@ const handleFiles = (files) => {
     return;
   }
 
+  resetResultLink();
   const dataTransfer = new DataTransfer();
   dataTransfer.items.add(file);
   fileInput.files = dataTransfer.files;
@@ -72,7 +116,39 @@ form.addEventListener("submit", async (event) => {
   formData.append("file", file);
 
   submitButton.disabled = true;
+  resetResultLink();
   setStatus("변환 중입니다. 파일 크기에 따라 몇 초 걸릴 수 있습니다.", "loading");
+
+  let mobilePreviewWindow = null;
+  if (isMobileBrowser) {
+    mobilePreviewWindow = window.open("", "_blank", "noopener");
+    if (mobilePreviewWindow) {
+      mobilePreviewWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="ko">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>PDF 준비 중</title>
+            <style>
+              body {
+                margin: 0;
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: #f7f2ea;
+                color: #1f2521;
+              }
+            </style>
+          </head>
+          <body>변환이 끝나면 PDF를 엽니다...</body>
+        </html>
+      `);
+      mobilePreviewWindow.document.close();
+    }
+  }
 
   try {
     const response = await fetch("/api/convert", {
@@ -96,18 +172,35 @@ form.addEventListener("submit", async (event) => {
     const match = disposition.match(/filename="?([^"]+)"?/);
     const downloadName = match ? match[1] : `${file.name.replace(/\.pdf$/i, "")}_4P.pdf`;
     const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = downloadName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(objectUrl);
+    showResultLink(objectUrl, downloadName);
 
-    setStatus("변환이 완료되었습니다. 다운로드를 시작합니다.", "success");
+    if (isMobileBrowser) {
+      if (mobilePreviewWindow) {
+        mobilePreviewWindow.location.replace(objectUrl);
+        setStatus(
+          "변환이 완료되었습니다. 새 탭에서 PDF를 열었습니다. 브라우저의 공유 또는 다운로드 메뉴로 저장해 주세요.",
+          "success",
+        );
+      } else {
+        setStatus(
+          "변환이 완료되었습니다. 아래 '변환된 PDF 열기'를 눌러 저장해 주세요.",
+          "success",
+        );
+      }
+    } else {
+      triggerDesktopDownload(objectUrl, downloadName);
+      setStatus("변환이 완료되었습니다. 다운로드를 시작합니다.", "success");
+    }
   } catch (error) {
+    if (mobilePreviewWindow && !mobilePreviewWindow.closed) {
+      mobilePreviewWindow.close();
+    }
     setStatus(error.message, "error");
   } finally {
     submitButton.disabled = false;
   }
+});
+
+window.addEventListener("beforeunload", () => {
+  releaseActiveObjectUrl();
 });
