@@ -6,6 +6,38 @@ const statusBox = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
 const resultActions = document.getElementById("result-actions");
 const openResultLink = document.getElementById("open-result-link");
+const pageMode = document.body.dataset.mode || "pdf4p";
+
+const pageConfig = {
+  pdf4p: {
+    endpoint: "/api/convert",
+    extension: ".pdf",
+    readyMessage: "업로드 준비가 완료되었습니다.",
+    missingMessage: "먼저 PDF 파일을 선택해 주세요.",
+    invalidMessage: "PDF 파일만 업로드할 수 있습니다.",
+    loadingMessage: "변환 중입니다. 파일 크기에 따라 몇 초 걸릴 수 있습니다.",
+    successMobileMessage: "변환이 완료되었습니다. 아래 버튼을 눌러 PDF를 다운로드해 주세요.",
+    successDesktopMessage: "변환이 완료되었습니다. 아래 버튼으로 다시 다운로드할 수 있습니다.",
+    fallbackDownloadName(fileNameValue) {
+      return `${fileNameValue.replace(/\.pdf$/i, "")}_4P.pdf`;
+    },
+  },
+  markdown: {
+    endpoint: "/api/convert/markdown",
+    extension: ".md",
+    readyMessage: "Markdown 업로드 준비가 완료되었습니다.",
+    missingMessage: "먼저 Markdown 파일을 선택해 주세요.",
+    invalidMessage: "`.md` 파일만 업로드할 수 있습니다.",
+    loadingMessage: "Markdown을 PDF로 변환 중입니다. 잠시만 기다려 주세요.",
+    successMobileMessage: "PDF 생성이 완료되었습니다. 아래 버튼을 눌러 다운로드해 주세요.",
+    successDesktopMessage: "PDF 생성이 완료되었습니다. 아래 버튼으로 다시 다운로드할 수 있습니다.",
+    fallbackDownloadName(fileNameValue) {
+      return `${fileNameValue.replace(/\.md$/i, "")}.pdf`;
+    },
+  },
+};
+
+const config = pageConfig[pageMode] || pageConfig.pdf4p;
 
 const userAgent = navigator.userAgent || navigator.vendor || "";
 const isIOS =
@@ -73,7 +105,7 @@ const handleFiles = (files) => {
   dataTransfer.items.add(file);
   fileInput.files = dataTransfer.files;
   updateSelectedFile(file);
-  setStatus("업로드 준비가 완료되었습니다.", "ready");
+  setStatus(config.readyMessage, "ready");
 };
 
 ["dragenter", "dragover"].forEach((eventName) => {
@@ -103,12 +135,12 @@ form.addEventListener("submit", async (event) => {
 
   const file = fileInput.files[0];
   if (!file) {
-    setStatus("먼저 PDF 파일을 선택해 주세요.", "error");
+    setStatus(config.missingMessage, "error");
     return;
   }
 
-  if (!file.name.toLowerCase().endsWith(".pdf")) {
-    setStatus("PDF 파일만 업로드할 수 있습니다.", "error");
+  if (!file.name.toLowerCase().endsWith(config.extension)) {
+    setStatus(config.invalidMessage, "error");
     return;
   }
 
@@ -117,10 +149,10 @@ form.addEventListener("submit", async (event) => {
 
   submitButton.disabled = true;
   resetResultLink();
-  setStatus("변환 중입니다. 파일 크기에 따라 몇 초 걸릴 수 있습니다.", "loading");
+  setStatus(config.loadingMessage, "loading");
 
   try {
-    const response = await fetch("/api/convert", {
+    const response = await fetch(config.endpoint, {
       method: "POST",
       body: formData,
     });
@@ -139,15 +171,15 @@ form.addEventListener("submit", async (event) => {
     const blob = await response.blob();
     const disposition = response.headers.get("Content-Disposition") || "";
     const match = disposition.match(/filename="?([^"]+)"?/);
-    const downloadName = match ? match[1] : `${file.name.replace(/\.pdf$/i, "")}_4P.pdf`;
+    const downloadName = match ? match[1] : config.fallbackDownloadName(file.name);
     const objectUrl = URL.createObjectURL(blob);
     showResultLink(objectUrl, downloadName);
 
     if (isMobileBrowser) {
-      setStatus("변환이 완료되었습니다. 아래 버튼을 눌러 PDF를 다운로드해 주세요.", "success");
+      setStatus(config.successMobileMessage, "success");
     } else {
       triggerDesktopDownload(objectUrl, downloadName);
-      setStatus("변환이 완료되었습니다. 아래 버튼으로 다시 다운로드할 수 있습니다.", "success");
+      setStatus(config.successDesktopMessage, "success");
     }
   } catch (error) {
     setStatus(error.message, "error");
