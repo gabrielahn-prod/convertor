@@ -1,8 +1,16 @@
 services:
-  pdf-converter:
+  web:
     build:
       context: .
     ports:
       - "8000:8000"
     environment:
       FLASK_ENV: production
+      GOTENBERG_URL: http://gotenberg:3000
+    depends_on:
+      - gotenberg
+  gotenberg:
+    build:
+      context: ./gotenberg
+    ports:
+      - "127.0.0.1:3000:3000"

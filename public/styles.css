@@ -12,6 +12,20 @@
   --shadow: 0 24px 80px rgba(97, 62, 38, 0.15);
 }
 
+body[data-mode="markdown"] {
+  --bg: #f2f0ea;
+  --surface: rgba(248, 251, 247, 0.84);
+  --surface-strong: #fbfdf9;
+  --ink: #162018;
+  --muted: #4e5b50;
+  --line: rgba(22, 32, 24, 0.12);
+  --accent: #2f7d57;
+  --accent-deep: #1f5239;
+  --success: #176447;
+  --error: #9d3535;
+  --shadow: 0 24px 80px rgba(44, 70, 49, 0.12);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -35,6 +49,42 @@ body {
 
 .hero {
   margin-bottom: 28px;
+}
+
+.page-switch {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 250, 243, 0.66);
+  backdrop-filter: blur(16px);
+}
+
+.page-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.page-link:hover {
+  transform: translateY(-1px);
+}
+
+.page-link.is-active {
+  background: rgba(31, 37, 33, 0.92);
+  color: #fff7ef;
 }
 
 .eyebrow,
@@ -127,6 +177,12 @@ body {
 .file-name {
   color: var(--muted);
   font-size: 0.98rem;
+}
+
+.dropzone-note {
+  max-width: 420px;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .submit-button {
@@ -232,6 +288,11 @@ body {
     width: min(100% - 20px, 100%);
     padding-top: 24px;
     padding-bottom: 40px;
+  }
+
+  .page-switch {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .upload-card,

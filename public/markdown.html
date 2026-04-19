@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF 4P 변환기</title>
+    <title>Markdown PDF 변환기</title>
     <meta
       name="description"
-      content="PDF를 업로드하면 4P 굿노트 스타일 노트 PDF로 변환해서 바로 다운로드합니다."
+      content="Markdown 파일을 업로드하면 gotenberg를 통해 PDF로 변환해서 바로 다운로드합니다."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,18 +17,18 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-mode="pdf4p">
+  <body data-mode="markdown">
     <div class="page-shell">
       <header class="hero">
         <div class="page-switch" aria-label="변환기 선택">
-          <a class="page-link is-active" href="/">PDF 4P 변환</a>
-          <a class="page-link" href="/markdown.html">Markdown → PDF</a>
+          <a class="page-link" href="/">PDF 4P 변환</a>
+          <a class="page-link is-active" href="/markdown.html">Markdown → PDF</a>
         </div>
-        <p class="eyebrow">PDF TO NOTE</p>
-        <h1>슬라이드를 업로드하면<br />필기용 4P PDF로 변환합니다.</h1>
+        <p class="eyebrow">MARKDOWN TO PDF</p>
+        <h1>문서를 업로드하면<br />바로 PDF로 내려받습니다.</h1>
         <p class="hero-copy">
-          드래그 앤 드롭 또는 파일 선택으로 PDF를 올리면, 왼쪽에는 슬라이드 2장,
-          오른쪽에는 모눈 영역이 있는 다운로드용 PDF를 생성합니다.
+          <code>.md</code> 파일을 올리면 서버가 <code>gotenberg</code>의 Chromium Markdown 변환 엔드포인트로
+          전달하고, 인쇄용 스타일이 적용된 PDF를 즉시 생성합니다.
         </p>
       </header>
 
@@ -36,36 +36,38 @@
         <section class="upload-card">
           <form id="upload-form" class="upload-form">
             <label id="dropzone" class="dropzone" for="file-input">
-              <input id="file-input" name="file" type="file" accept="application/pdf,.pdf" hidden />
+              <input id="file-input" name="file" type="file" accept=".md,text/markdown,text/plain" hidden />
               <span class="dropzone-kicker">DROP OR SELECT</span>
-              <strong>PDF 파일 업로드</strong>
-              <span class="dropzone-note">발표 자료나 강의 PDF를 그대로 올리면 됩니다.</span>
+              <strong>Markdown 파일 업로드</strong>
+              <span class="dropzone-note">
+                README, 강의 노트, 기술 문서처럼 일반적인 `.md` 파일을 그대로 올릴 수 있습니다.
+              </span>
               <span id="file-name" class="file-name">선택된 파일이 없습니다.</span>
             </label>
 
             <button id="submit-button" type="submit" class="submit-button">
-              변환 후 다운로드
+              PDF 생성 후 다운로드
             </button>
           </form>
 
           <div id="status" class="status" aria-live="polite"></div>
           <div id="result-actions" class="result-actions" hidden>
-            <a id="open-result-link" class="result-link" href="#">변환된 PDF 다운로드</a>
+            <a id="open-result-link" class="result-link" href="#">생성된 PDF 다운로드</a>
           </div>
         </section>
 
         <aside class="info-panel">
           <div class="info-block">
+            <span class="info-label">ENGINE</span>
+            <p><code>gotenberg</code> Chromium Markdown 변환 엔드포인트를 사용합니다.</p>
+          </div>
+          <div class="info-block">
+            <span class="info-label">INPUT</span>
+            <p><code>.md</code> 파일 업로드, 최대 40MB</p>
+          </div>
+          <div class="info-block">
             <span class="info-label">OUTPUT</span>
-            <p>1440x1080 비율의 4P 필기용 PDF</p>
-          </div>
-          <div class="info-block">
-            <span class="info-label">FLOW</span>
-            <p>업로드 → 서버 변환 → 즉시 다운로드</p>
-          </div>
-          <div class="info-block">
-            <span class="info-label">LIMIT</span>
-            <p>PDF만 업로드 가능, 최대 40MB</p>
+            <p>A4 기준의 스타일이 적용된 PDF를 바로 다운로드합니다.</p>
           </div>
         </aside>
       </main>
