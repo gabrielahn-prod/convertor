@@ -26,7 +26,8 @@ vercel
 ```
 
 `public/` 폴더의 정적 파일과 `app.py` Flask 앱을 함께 배포합니다.
-Vercel 서버리스 함수 엔트리포인트는 `api/app.py` 입니다.
+`requirements.txt`에 `Flask`가 있어 Vercel이 프로젝트 루트의 `app.py`를 Flask 프레임워크 프리셋 엔트리포인트로 자동 인식하고,
+모든 요청(정적 파일 포함)을 이 앱으로 라우팅합니다. 별도의 `rewrites` 설정은 필요하지 않습니다.
 
 Markdown -> PDF 기능은 `GOTENBERG_URL` 환경 변수가 접근 가능한 `gotenberg` 인스턴스를 가리켜야 동작합니다.
 
