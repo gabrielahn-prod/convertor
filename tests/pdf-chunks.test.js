@@ -6,10 +6,15 @@ const { test } = require("node:test");
 const PDFLib = require("../public/vendor/pdf-lib.min.js");
 
 const root = path.join(__dirname, "..");
-const { splitPdfIntoChunks } = new Function(
+const PDFChunking = new Function(
   "PDFLib",
   `${fs.readFileSync(path.join(root, "public/pdf-chunks.js"), "utf8")}; return PDFChunking;`
 )(PDFLib);
+const { splitPdfIntoChunks } = PDFChunking;
+const loadConverter = (fetchImpl = fetch) => new Function(
+  "PDFLib", "PDFChunking", "fetch",
+  `${fs.readFileSync(path.join(root, "public/pdf-converter.js"), "utf8")}; return PDFNoteConverter;`
+)(PDFLib, PDFChunking, fetchImpl);
 
 const makePdf = async (specs) => {
   const doc = await PDFLib.PDFDocument.create();
@@ -94,4 +99,82 @@ test("size-based recursive splitting preserves full sheets with rotation and cro
 
 test("empty PDF yields no conversion chunks", async () => {
   assert.equal((await split(await makePdf([]))).length, 0);
+});
+
+test("browser conversion matches server content and placement for mixed, rotated and cropped pages", async () => {
+  const bytes = await makePdf([
+    [595, 842], [800, 600], [595, 842, 90], [842, 595, 90],
+    [595, 842, 180], [900, 900, 270, [50, 50, 800, 500]],
+    [900, 900, 0, [50, 50, 500, 800]], [600, 600],
+  ]);
+  const converted = await loadConverter().convertPdfBytes(bytes);
+  const result = spawnSync(process.env.PYTHON || "python3", ["-c", `
+import base64, json, sys
+import fitz
+from converter import convert_pdf_bytes
+payload = json.load(sys.stdin)
+with fitz.open(stream=convert_pdf_bytes(base64.b64decode(payload['source'])), filetype='pdf') as server, fitz.open(stream=base64.b64decode(payload['local']), filetype='pdf') as local:
+    assert len(server) == len(local)
+    for expected, actual in zip(server, local):
+        assert expected.rect == actual.rect
+        a, b = expected.get_text('words'), actual.get_text('words')
+        assert [w[4] for w in a] == [w[4] for w in b], (a, b)
+        for word_a, word_b in zip(a, b):
+            assert all(abs(x-y) < 0.05 for x,y in zip(word_a[:4], word_b[:4])), (word_a, word_b)
+        assert len(actual.get_drawings()) == len(expected.get_drawings())
+        assert all(line['rect'].x0 >= 720 for line in actual.get_drawings())
+`], {
+    cwd: root,
+    input: JSON.stringify({ source: Buffer.from(bytes).toString("base64"), local: Buffer.from(converted).toString("base64") }),
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("a single page larger than the server limit is converted without a network request", async () => {
+  const { randomBytes } = require("node:crypto");
+  const source = await PDFLib.PDFDocument.load(await makePdf([[595, 842]]));
+  const commentStream = source.context.flateStream(`%${randomBytes(4300000).toString("base64")}\n`);
+  source.getPage(0).node.addContentStream(source.context.register(commentStream));
+  const bytes = await source.save();
+  const chunks = await split(bytes);
+  assert.equal(chunks.length, 1);
+  assert.ok(chunks[0].byteLength > PDFChunking.SAFE_CHUNK_BYTES);
+  let requests = 0;
+  const converter = loadConverter(async () => { requests += 1; throw new Error("Must not upload oversized page"); });
+  const output = await converter.convertChunk("/api/convert", chunks[0], 1);
+  assert.equal(requests, 0);
+  const doc = await PDFLib.PDFDocument.load(output);
+  assert.equal(doc.getPageCount(), 1);
+  assert.equal(doc.getPage(0).getWidth(), 1440);
+});
+
+test("server payload errors, outages and network failures recover through browser conversion", async () => {
+  const bytes = await makePdf([[595, 842]]);
+  for (const status of [413, 500, 504, "offline"]) {
+    let requests = 0;
+    const converter = loadConverter(async () => {
+      requests += 1;
+      if (status === "offline") throw new TypeError("Failed to fetch");
+      return new Response("Platform error", { status });
+    });
+    const output = await converter.convertChunk("/api/convert", bytes, 1);
+    assert.equal(requests, 1);
+    assert.equal((await PDFLib.PDFDocument.load(output)).getPageCount(), 1);
+  }
+});
+
+test("small chunks still use the server and preserve validation errors", async () => {
+  const bytes = await makePdf([[595, 842]]);
+  const converter = loadConverter(async () => new Response(bytes, { status: 200 }));
+  assert.deepEqual(new Uint8Array(await converter.convertChunk("/api/convert", bytes, 1)), bytes);
+  const rejected = loadConverter(async () => new Response(JSON.stringify({ error: "잘못된 PDF입니다." }), { status: 400 }));
+  await assert.rejects(rejected.convertChunk("/api/convert", bytes, 1), /잘못된 PDF/);
+});
+
+test("blank pages convert locally without embedding errors", async () => {
+  const doc = await PDFLib.PDFDocument.create();
+  doc.addPage([595, 842]);
+  const output = await loadConverter().convertPdfBytes(await doc.save());
+  assert.equal((await PDFLib.PDFDocument.load(output)).getPageCount(), 1);
 });

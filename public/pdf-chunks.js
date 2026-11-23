@@ -4,14 +4,23 @@ const PDFChunking = (() => {
   const CHUNK_PAGE_SIZE = 20;
   const SAFE_CHUNK_BYTES = 4 * 1024 * 1024;
 
-  const isPortrait = (page) => {
+  const getPageGeometry = (page) => {
     const crop = page.getCropBox();
     const media = page.getMediaBox();
-    const width = Math.min(crop.x + crop.width, media.x + media.width) - Math.max(crop.x, media.x);
-    const height = Math.min(crop.y + crop.height, media.y + media.height) - Math.max(crop.y, media.y);
-    const quarterTurn = Math.abs(page.getRotation().angle % 180) === 90;
-    return quarterTurn ? width > height : height > width;
+    const left = Math.max(crop.x, media.x);
+    const bottom = Math.max(crop.y, media.y);
+    const right = Math.min(crop.x + crop.width, media.x + media.width);
+    const top = Math.min(crop.y + crop.height, media.y + media.height);
+    const width = right - left;
+    const height = top - bottom;
+    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
+    const quarterTurn = rotation === 90 || rotation === 270;
+    const displayWidth = quarterTurn ? height : width;
+    const displayHeight = quarterTurn ? width : height;
+    return { left, bottom, right, top, rotation, displayWidth, displayHeight, isPortrait: displayHeight > displayWidth };
   };
+
+  const isPortrait = (page) => getPageGeometry(page).isPortrait;
 
   const buildChunkBytes = async (sourceDoc, groups) => {
     const chunkDoc = await PDFLib.PDFDocument.create();
@@ -68,5 +77,5 @@ const PDFChunking = (() => {
     return chunks;
   };
 
-  return { splitPdfIntoChunks };
+  return { splitPdfIntoChunks, getPageGeometry, SAFE_CHUNK_BYTES };
 })();

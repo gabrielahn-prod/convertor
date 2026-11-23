@@ -8,6 +8,7 @@ PDF 파일의 페이지 방향을 자동 인식해 왼쪽에는 원본, 오른�
 - 회전 정보와 잘라낸 영역을 반영해 화면에 보이는 방향으로 판단합니다. 정사각형 페이지는 가로 형식으로 처리합니다.
 - 출력 크기는 기존과 같은 1440×1080이며, 원본 비율을 유지합니다. 다운로드 파일명은 호환성을 위해 `_4P.pdf`를 유지합니다.
 - 긴 PDF는 배치가 끊기지 않도록 최대 20페이지씩 나눠 변환한 뒤 합칩니다.
+- 한 페이지 자체가 서버 전송 한도보다 크거나 서버 변환에 실패하면 해당 부분은 브라우저에서 직접 변환합니다. 이미지로 바꾸지 않고 PDF 원본 내용을 유지합니다.
 
 추가로 `.md` 파일을 업로드해 `gotenberg` 기반으로 PDF로 내려받는 페이지도 포함되어 있습니다.
 
@@ -52,7 +53,7 @@ Markdown -> PDF 기능은 `GOTENBERG_URL` 환경 변수가 접근 가능한 `got
 
 ```bash
 python -m unittest discover -s tests
-PYTHON=python node --test tests/pdf-chunks.test.js
+PYTHON=python node --test tests/*.test.js
 ```
 
 가로·세로·혼합·회전·CropBox PDF의 배치와 API 응답을 검증합니다.

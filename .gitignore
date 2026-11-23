@@ -13,6 +13,8 @@ venv/
 # Local app artifacts
 input_pdf/
 output_pdf/
+output/
+tmp/
 
 # Vercel local metadata
 .vercel/

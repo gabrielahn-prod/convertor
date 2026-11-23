@@ -39,37 +39,6 @@ const pageConfig = {
 
 const config = pageConfig[pageMode] || pageConfig.pdf4p;
 
-// Vercel 서버리스 함수는 요청/응답 본문을 4.5MB로 강제 제한한다(설정 불가).
-// 슬라이드가 많아 파일이 커지면 이 한도에 걸려 변환이 실패하므로,
-// 가로 2장 / 세로 1장의 배치가 끊기지 않도록 최대 20페이지씩 나눈다.
-
-const convertChunk = async (endpoint, bytes, index) => {
-  const formData = new FormData();
-  formData.append(
-    "file",
-    new Blob([bytes], { type: "application/pdf" }),
-    `chunk-${index}.pdf`
-  );
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    let message = "변환에 실패했습니다.";
-    try {
-      const payload = await response.json();
-      message = payload.error || message;
-    } catch (_error) {
-      // JSON이 아니면 기본 메시지를 그대로 사용합니다.
-    }
-    throw new Error(message);
-  }
-
-  return response.arrayBuffer();
-};
-
 const mergeConvertedChunks = async (buffers) => {
   const mergedDoc = await PDFLib.PDFDocument.create();
   for (const buffer of buffers) {
@@ -185,6 +154,11 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (file.size > 40 * 1024 * 1024) {
+    setStatus("업로드 가능한 최대 파일 크기는 40MB입니다.", "error");
+    return;
+  }
+
   submitButton.disabled = true;
   resetResultLink();
   setStatus(config.loadingMessage, "loading");
@@ -203,7 +177,7 @@ form.addEventListener("submit", async (event) => {
         if (chunks.length > 1) {
           setStatus(`변환 중입니다. (${i + 1}/${chunks.length})`, "loading");
         }
-        convertedBuffers.push(await convertChunk(config.endpoint, chunks[i], i + 1));
+        convertedBuffers.push(await PDFNoteConverter.convertChunk(config.endpoint, chunks[i], i + 1));
       }
 
       const mergedBytes =
