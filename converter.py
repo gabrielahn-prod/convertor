@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 from pathlib import Path
 
 import fitz
@@ -78,13 +77,14 @@ def fit_contain_rect(
 
 
 def _page_dimensions(page: fitz.Page) -> tuple[float, float]:
-    rotation = page.rotation % 360
+    # page.rect already includes the PDF's display rotation and crop box.
     rect = page.rect
-    width = float(rect.width)
-    height = float(rect.height)
-    if rotation in (90, 270):
-        return height, width
-    return width, height
+    return float(rect.width), float(rect.height)
+
+
+def _is_portrait(page: fitz.Page) -> bool:
+    width, height = _page_dimensions(page)
+    return height > width
 
 
 def _place_slide(target_page: fitz.Page, source_doc: fitz.Document, index: int, slot: fitz.Rect) -> None:
@@ -92,9 +92,15 @@ def _place_slide(target_page: fitz.Page, source_doc: fitz.Document, index: int, 
     source_width, source_height = _page_dimensions(source_page)
     target_rect = fit_contain_rect(slot, source_width, source_height)
 
-    # Rotate back to an upright orientation before placing it.
-    rotate = (360 - source_page.rotation) % 360
-    target_page.show_pdf_page(target_rect, source_doc, index, rotate=rotate)
+    if source_page.get_contents():
+        # Import the unrotated crop box, then apply the PDF's display rotation.
+        # Restoring /Rotate preserves the source geometry for subsequent reads.
+        rotation = source_page.rotation
+        try:
+            source_page.set_rotation(0)
+            target_page.show_pdf_page(target_rect, source_doc, index, rotate=-rotation)
+        finally:
+            source_page.set_rotation(rotation)
 
 
 def convert_pdf_bytes(pdf_bytes: bytes) -> bytes:
@@ -106,15 +112,25 @@ def convert_pdf_bytes(pdf_bytes: bytes) -> bytes:
     output_doc = fitz.open()
 
     try:
-        for index in range(0, source_doc.page_count, 2):
+        index = 0
+        while index < source_doc.page_count:
             output_page = output_doc.new_page(width=PAGE_WIDTH, height=PAGE_HEIGHT)
 
-            top_slot = fitz.Rect(0, 0, SLIDE_COLUMN_WIDTH, HALF_PAGE_HEIGHT)
-            _place_slide(output_page, source_doc, index, top_slot)
+            if _is_portrait(source_doc[index]):
+                full_slot = fitz.Rect(0, 0, SLIDE_COLUMN_WIDTH, PAGE_HEIGHT)
+                _place_slide(output_page, source_doc, index, full_slot)
+                index += 1
+            else:
+                top_slot = fitz.Rect(0, 0, SLIDE_COLUMN_WIDTH, HALF_PAGE_HEIGHT)
+                _place_slide(output_page, source_doc, index, top_slot)
+                index += 1
 
-            if index + 1 < source_doc.page_count:
-                bottom_slot = fitz.Rect(0, HALF_PAGE_HEIGHT, SLIDE_COLUMN_WIDTH, PAGE_HEIGHT)
-                _place_slide(output_page, source_doc, index + 1, bottom_slot)
+                # Pair only consecutive landscape pages. A portrait page always
+                # starts a new output sheet, keeping mixed documents in order.
+                if index < source_doc.page_count and not _is_portrait(source_doc[index]):
+                    bottom_slot = fitz.Rect(0, HALF_PAGE_HEIGHT, SLIDE_COLUMN_WIDTH, PAGE_HEIGHT)
+                    _place_slide(output_page, source_doc, index, bottom_slot)
+                    index += 1
 
             draw_grid(
                 output_page,

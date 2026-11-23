@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF 4P 변환기</title>
+    <title>PDF 필기 노트 변환기</title>
     <meta
       name="description"
-      content="PDF를 업로드하면 4P 굿노트 스타일 노트 PDF로 변환해서 바로 다운로드합니다."
+      content="가로·세로 PDF를 자동 인식해 원본과 모눈 필기 공간이 있는 노트 PDF로 변환합니다."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,14 +21,14 @@
     <div class="page-shell">
       <header class="hero">
         <div class="page-switch" aria-label="변환기 선택">
-          <a class="page-link is-active" href="/">PDF 4P 변환</a>
+          <a class="page-link is-active" href="/">PDF 노트 변환</a>
           <a class="page-link" href="/markdown.html">Markdown → PDF</a>
         </div>
         <p class="eyebrow">PDF TO NOTE</p>
-        <h1>슬라이드를 업로드하면<br />필기용 4P PDF로 변환합니다.</h1>
+        <h1>PDF를 업로드하면<br />필기용 노트로 변환합니다.</h1>
         <p class="hero-copy">
-          드래그 앤 드롭 또는 파일 선택으로 PDF를 올리면, 왼쪽에는 슬라이드 2장,
-          오른쪽에는 모눈 영역이 있는 다운로드용 PDF를 생성합니다.
+          가로·세로를 자동으로 인식해 왼쪽에는 가로 슬라이드 2장 또는 세로 문서 1장을,
+          오른쪽에는 모눈 필기 공간을 배치합니다.
         </p>
       </header>
 
@@ -39,7 +39,7 @@
               <input id="file-input" name="file" type="file" accept="application/pdf,.pdf" hidden />
               <span class="dropzone-kicker">DROP OR SELECT</span>
               <strong>PDF 파일 업로드</strong>
-              <span class="dropzone-note">발표 자료나 강의 PDF를 그대로 올리면 됩니다.</span>
+              <span class="dropzone-note">가로 발표 자료부터 세로 논문까지, PDF를 그대로 올려 주세요.</span>
               <span id="file-name" class="file-name">선택된 파일이 없습니다.</span>
             </label>
 
@@ -57,7 +57,11 @@
         <aside class="info-panel">
           <div class="info-block">
             <span class="info-label">OUTPUT</span>
-            <p>1440x1080 비율의 4P 필기용 PDF</p>
+            <p>1440×1080 필기용 PDF<br />왼쪽 원본 · 오른쪽 모눈 노트</p>
+          </div>
+          <div class="info-block">
+            <span class="info-label">AUTO LAYOUT</span>
+            <p>가로: 슬라이드 2장씩 위아래로<br />세로: 문서 1장씩 크게<br />방향이 섞여 있어도 페이지별로 자동 배치합니다.</p>
           </div>
           <div class="info-block">
             <span class="info-label">FLOW</span>
@@ -65,13 +69,14 @@
           </div>
           <div class="info-block">
             <span class="info-label">LIMIT</span>
-            <p>PDF만 업로드 가능, 최대 40MB (긴 PDF는 20페이지씩 나눠서 자동으로 변환 후 합칩니다)</p>
+            <p>PDF만 업로드 가능, 최대 40MB (긴 PDF는 최대 20페이지씩 나눠서 자동으로 변환 후 합칩니다)</p>
           </div>
         </aside>
       </main>
     </div>
 
     <script src="/vendor/pdf-lib.min.js" defer></script>
+    <script src="/pdf-chunks.js" defer></script>
     <script src="/app.js" defer></script>
   </body>
 </html>
